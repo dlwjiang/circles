@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>Circles</title>
+
+  <style type="text/css">
+
+    #header-text {
+      text-align:center;
+    }
+
+    #header-text h1 {
+      font-size: 110px;
+      color: #B30061;
+      font-family: 'Indie Flower', cursive;
+      margin: 0px;
+    }
+
+    svg {
+      background-color: #fff;
+    }
+
+
+
+  </style>
+
+  <link href='http://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet' type='text/css'>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://underscorejs.org/underscore-min.js"></script>
+
+</head>
+<body>
+
+  <!-- ====== -->
+  <!-- Header -->
+  <!-- ====== -->
+  <div id="header-text">
+    <h1>Circles</h1>
+  </div>
+`
+  <hr>
+
+
+  <!-- ============== -->
+  <!-- Crossword Area -->
+  <!-- ============== -->
+  <div id="circles"></div>
+
+  <!-- ========== -->
+  <!-- JAVASCRIPT -->
+  <!-- ========== -->
+
+  <script type="text/javascript">
+
+    var divs = d3.select("#circles");
+
+    var data = [];
+
+    var height = 800;
+
+    var radius = 40;
+
+    var svg = divs.append('svg')
+                  .attr('height', height)
+                  .attr('width', "100%");
+
+    var width = $("svg").width();
+
+    var circles = svg.selectAll('circle')
+                     .data(data, function(d) { return d.id; })
+                     .enter()
+                     .append('circle')
+                     .attr('cx', function(d) {return d.x})
+                     .attr('cy', function(d) {return d.y})
+                     .attr('r', radius)
+                     .attr('opacity', 0.3)
+                     .attr('fill', 'red');
+
+    var tickCounter = 1;
+
+    //number of ticks for a full traversal
+    var tickDivision = 20;
+
+    var color = d3.scale.category10();
+
+    function tick() {
+
+      data.push({id:tickCounter, x:0, y:0, type: 0})
+      data.push({id:tickCounter+"B", x:0, y:height, type: 1})
+      data.push({id:tickCounter+"C", x:width/2, y:0, type: 2})
+      data.push({id:tickCounter+"D", x:0, y:height/2, type: 3})
+
+      var circles = svg.selectAll('circle');
+
+      circles
+         .data(data, function(d) { return d.id; })
+         .enter()
+         .append('circle')
+         .attr('cx', function(d) {return d.x})
+         .attr('cy', function(d) {return d.y})
+         .attr('r', radius)
+         .attr('opacity', 0.1)
+         .attr('fill', function(d,i){
+            return color(d.id);
+         });
+
+      _.each(data, function(eachCircle){
+         if (eachCircle.type === 0){
+           eachCircle.x += width/tickDivision;
+           eachCircle.y += height/tickDivision;
+         }
+         else if (eachCircle.type === 1) {
+           eachCircle.x += width/tickDivision;
+           eachCircle.y -= height/tickDivision;
+         }
+         else if (eachCircle.type === 2) {
+           eachCircle.y += height/tickDivision;
+         }
+         else if (eachCircle.type === 3) {
+           eachCircle.x += width/tickDivision;
+         }
+      });
+
+      circles.transition()
+             .attr('cx', function(d) {return d.x})
+             .attr('cy', function(d) {return d.y})
+             .attr('r', function(d) { return radius + Math.floor(Math.random()*radius)})
+
+      data = _.filter(data, function(eachSquare){
+         return (eachSquare.x < width + 100) && (eachSquare.y < height + 100);
+      });
+
+      circles
+         .data(data, function(d) { return d.id; })
+         .exit()
+         .transition()
+         .attr("opacity", 0)
+         .remove();
+
+      tickCounter++;
+    }
+
+    $("#button").click(function(){
+      tick();
+    });
+
+    setInterval(tick, 100);
+
+
+
+
+
+
+
+
+  </script>
+
+</body>
+</html>
