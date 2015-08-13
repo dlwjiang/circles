@@ -6,47 +6,44 @@
 
   <style type="text/css">
 
-    #header-text {
-      text-align:center;
-    }
-
-    #header-text h1 {
-      font-size: 110px;
-      color: #B30061;
-      font-family: 'Indie Flower', cursive;
-      margin: 0px;
-    }
-
     svg {
       background-color: #fff;
     }
 
+    #circles-text {
+      font-size: 170px;
+      position: absolute;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300px;
+      color: white;
+      margin-top:35px;
+      margin-left:10px;
+    }
+
+    body {
+      margin:0px;
+    }
 
 
   </style>
 
   <link href='http://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet' type='text/css'>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+  <link href='http://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
   <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="http://underscorejs.org/underscore-min.js"></script>
 
 </head>
 <body>
 
-  <!-- ====== -->
-  <!-- Header -->
-  <!-- ====== -->
-  <div id="header-text">
-    <h1>Circles</h1>
+  <!-- ============== -->
+  <!-- Circles Area -->
+  <!-- ============== -->
+  <div id="circles">
+    <div>
+      <span id="circles-text">CIRCLES</span>
+    </div>
   </div>
-`
-  <hr>
-
-
-  <!-- ============== -->
-  <!-- Crossword Area -->
-  <!-- ============== -->
-  <div id="circles"></div>
 
   <!-- ========== -->
   <!-- JAVASCRIPT -->
@@ -54,46 +51,47 @@
 
   <script type="text/javascript">
 
-    var divs = d3.select("#circles");
-
     var data = [];
-
-    var height = 800;
-
-    var radius = 40;
-
-    var svg = divs.append('svg')
-                  .attr('height', height)
-                  .attr('width', "100%");
+    var height = $(window).height();
+    var radius = 80;
+    var opacity = 0.2;
+    var svg = d3.select("#circles")
+                .append('svg')
+                .attr('height', height)
+                .attr('width', "100%");
 
     var width = $("svg").width();
 
-    var circles = svg.selectAll('circle')
-                     .data(data, function(d) { return d.id; })
-                     .enter()
-                     .append('circle')
-                     .attr('cx', function(d) {return d.x})
-                     .attr('cy', function(d) {return d.y})
-                     .attr('r', radius)
-                     .attr('opacity', 0.3)
-                     .attr('fill', 'red');
-
+    var color = d3.scale.category20();
     var tickCounter = 1;
-
-    //number of ticks for a full traversal
-    var tickDivision = 20;
-
-    var color = d3.scale.category10();
+    var traversalTime = 2500;
+    //delay between each tick call.
+    //for 24 fps roughly 1000ms/24 = 41 ish
+    var tickDuration = 40;
+    //calculate this base on desired traversal time as well of tick call frequency
+    var tickDivision = Math.floor(traversalTime/tickDuration);
 
     function tick() {
 
-      data.push({id:tickCounter, x:0, y:0, type: 0})
-      data.push({id:tickCounter+"B", x:0, y:height, type: 1})
-      data.push({id:tickCounter+"C", x:width/2, y:0, type: 2})
-      data.push({id:tickCounter+"D", x:0, y:height/2, type: 3})
+      //add a new circle every 3rd tick;
+      if (tickCounter % 3 === 0) {
+        //upper left to bottom right
+        data.push({id:tickCounter, x:0, y:0, type: 0})
+        //bottom left to upper right
+        data.push({id:tickCounter+"B", x:0, y:height, type: 1})
+        // mid left to mid-right
+        data.push({id:tickCounter+"D", x:0, y:height/2, type: 3})
+        // top left to top right
+        data.push({id:tickCounter+"E", x:0, y:height/7, type: 4})
+        // bottom left to bottom right
+        data.push({id:tickCounter+"F", x:0, y:height*6/7, type: 5})
+      }
 
       var circles = svg.selectAll('circle');
 
+      /*=============================
+      =            Enter            =
+      =============================*/
       circles
          .data(data, function(d) { return d.id; })
          .enter()
@@ -101,33 +99,45 @@
          .attr('cx', function(d) {return d.x})
          .attr('cy', function(d) {return d.y})
          .attr('r', radius)
-         .attr('opacity', 0.1)
+         .attr('opacity', opacity)
          .attr('fill', function(d,i){
             return color(d.id);
          });
 
+      /*==============================
+      =            Update            =
+      ==============================*/
       _.each(data, function(eachCircle){
-         if (eachCircle.type === 0){
-           eachCircle.x += width/tickDivision;
-           eachCircle.y += height/tickDivision;
-         }
-         else if (eachCircle.type === 1) {
-           eachCircle.x += width/tickDivision;
-           eachCircle.y -= height/tickDivision;
-         }
-         else if (eachCircle.type === 2) {
-           eachCircle.y += height/tickDivision;
-         }
-         else if (eachCircle.type === 3) {
-           eachCircle.x += width/tickDivision;
+
+         switch(eachCircle.type){
+
+            case 0:
+              eachCircle.x += width/tickDivision;
+              eachCircle.y += height/tickDivision;
+              break;
+
+            case 1:
+              eachCircle.x += width/tickDivision;
+              eachCircle.y -= height/tickDivision;
+              break;
+
+            case 3:
+            case 4:
+            case 5:
+               eachCircle.x += width/tickDivision;
+               break;
+
          }
       });
 
-      circles.transition()
-             .attr('cx', function(d) {return d.x})
-             .attr('cy', function(d) {return d.y})
-             .attr('r', function(d) { return radius + Math.floor(Math.random()*radius)})
+      var randomOpacity = d3.random.normal(0.3,0.2);
+      circles.transition().duration(tickDuration)
+             .attr('cx', function(d) { return d.x})
+             .attr('cy', function(d) { return d.y});
 
+      /*============================
+      =            Exit            =
+      ============================*/
       data = _.filter(data, function(eachSquare){
          return (eachSquare.x < width + 100) && (eachSquare.y < height + 100);
       });
@@ -135,23 +145,14 @@
       circles
          .data(data, function(d) { return d.id; })
          .exit()
-         .transition()
-         .attr("opacity", 0)
+         //.transition()
+         //.attr("opacity", 0)
          .remove();
 
       tickCounter++;
     }
 
-    $("#button").click(function(){
-      tick();
-    });
-
-    setInterval(tick, 100);
-
-
-
-
-
+    setInterval(tick, tickDuration);
 
 
 
